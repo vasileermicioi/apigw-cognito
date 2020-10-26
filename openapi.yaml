@@ -1,0 +1,113 @@
+openapi: "3.0.1"
+info:
+  title: "apigw-cognito-mokk2"
+  version: "1.0"
+paths:
+  /moderators:
+    get:
+      operationId: "get-moderators"
+      responses:
+        200:
+          description: "200 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArrayOfPerson"
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseTemplates:
+              application/json:
+                "[{\"first_name\":\"Les\",\"last_name\":\"Lugard\"\
+                },\n{\"first_name\":\"Gunner\",\"last_name\":\"Elfleet\"},\n{\"first_name\"\
+                :\"Beverly\",\"last_name\":\"Spincke\"},\n{\"first_name\":\"Fair\"\
+                ,\"last_name\":\"Fanton\"},\n{\"first_name\":\"Rab\",\"last_name\"\
+                :\"Tracy\"}]"
+        requestTemplates:
+          application/json: '{"statusCode": 200}'
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+      security:
+        - OpenIdAuthorizer:
+            - moderator
+            - admin
+  /buyers:
+    get:
+      operationId: "get-buyes"
+      responses:
+        200:
+          description: "200 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArrayOfPerson"
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseTemplates:
+              application/json:
+                "[{\"first_name\":\"Randee\",\"last_name\":\"Gainfort\"\
+                },\n{\"first_name\":\"Carmelina\",\"last_name\":\"Fleg\"},\n{\"first_name\"\
+                :\"Jess\",\"last_name\":\"Jeanel\"},\n{\"first_name\":\"Liam\",\"\
+                last_name\":\"Maylour\"},\n{\"first_name\":\"Daffi\",\"last_name\"\
+                :\"Avison\"},\n{\"first_name\":\"Cordelie\",\"last_name\":\"Withnall\"\
+                },\n{\"first_name\":\"Zulema\",\"last_name\":\"Bartolomeotti\"},\n\
+                {\"first_name\":\"Niki\",\"last_name\":\"Reyes\"},\n{\"first_name\"\
+                :\"Chiquia\",\"last_name\":\"Dorre\"},\n{\"first_name\":\"Gabriello\"\
+                ,\"last_name\":\"Jore\"}]"
+        requestTemplates:
+          application/json: '{"statusCode": 200}'
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+      security:
+        - OpenIdAuthorizer:
+            - buyer
+            - moderator
+            - admin
+
+  /admins:
+    get:
+      operationId: "get-admins"
+      responses:
+        200:
+          description: "200 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArrayOfPerson"
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseTemplates:
+              application/json:
+                "[{\"first_name\":\"Celesta\",\"last_name\":\"Grisedale\"\
+                },\n{\"first_name\":\"Anthe\",\"last_name\":\"Bradshaw\"}]"
+        requestTemplates:
+          application/json: '{"statusCode": 200}'
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+      security:
+        - OpenIdAuthorizer:
+            - admin
+components:
+  securitySchemes:
+    OpenIdAuthorizer:
+      type: openIdConnect
+      openIdConnectUrl:
+        "Fn::Sub": "https://cognito-idp.${AWS::Region}.amazonaws.com/${MokkUserPool}"
+  schemas:
+    ArrayOfPerson:
+      type: "array"
+      items:
+        $ref: "#/components/schemas/Person"
+    Person:
+      title: "Person"
+      type: "object"
+      properties:
+        first_name:
+          type: "string"
+        last_name:
+          type: "string"

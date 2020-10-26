@@ -1,0 +1,105 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: API Gateway + Cognito User Pools Auth
+
+Parameters:
+  CognitoUserPoolName:
+    Type: String
+    Default: MokkUserPool2
+
+  CognitoUserPoolClientName:
+    Type: String
+    Default: MokkPoolClient2
+
+  StageName:
+    Type: String
+    Default: mokk2
+
+  DomainName:
+    Type: String
+    Default: mokk2.com
+
+Resources:
+  MokkApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref StageName
+      DefinitionBody:
+        "Fn::Transform":
+          Name: "AWS::Include"
+          Parameters:
+            Location: ./openapi.yaml
+
+  MokkUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Ref CognitoUserPoolName
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: false
+      Schema:
+        - AttributeDataType: String
+          Name: email
+          Required: true
+      AutoVerifiedAttributes:
+        - email
+      MfaConfiguration: "OFF"
+      UsernameAttributes:
+        - email
+
+  MokkUserPoolResourceServer:
+    Type: AWS::Cognito::UserPoolResourceServer
+    Properties:
+      Identifier: !Ref DomainName
+      Name: !Ref DomainName
+      Scopes:
+        - ScopeName: buyer
+          ScopeDescription: role
+        - ScopeName: moderator
+          ScopeDescription: role
+        - ScopeName: admin
+          ScopeDescription: role
+      UserPoolId: !Ref MokkUserPool
+
+  MokkUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref MokkUserPool
+      ClientName: !Ref CognitoUserPoolClientName
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      AllowedOAuthFlows:
+        - implicit
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthScopes:
+        - email
+        - openid
+        - profile
+        - !Sub "${DomainName}/buyer"
+        - !Sub "${DomainName}/moderator"
+        - !Sub "${DomainName}/admin"
+      GenerateSecret: false
+      PreventUserExistenceErrors: ENABLED
+      RefreshTokenValidity: 30
+      SupportedIdentityProviders:
+        - COGNITO
+      CallbackURLs:
+        - http://localhost:3000
+      DefaultRedirectURI: http://localhost:3000
+
+Outputs:
+  ApiUrl:
+    Description: "API endpoint URL for ${StageName} environment"
+    Value: !Sub "https://${MokkApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}/"
+
+  CognitoUserPoolId:
+    Description: "Cognito User Pool Id"
+    Value: !Ref MokkUserPool
+
+  CognitoUserPoolClientId:
+    Description: "Cognito User Pool Client Id"
+    Value: !Ref MokkUserPoolClient
